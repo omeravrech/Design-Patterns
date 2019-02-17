@@ -2,6 +2,7 @@
 import json, os, time, sys
 from threading import Thread
 from device import Device
+from resources import MongoServer
 
 def getResources(filename):
     datastore = []
@@ -26,10 +27,17 @@ def getResources(filename):
 #        return datastore
 
 if (__name__ == '__main__'):
-    db = MongoServer('localhost')
-    threads = getResources('firewalls.json')
-    for thread in threads:
+
+    mongoSRV = MongoServer('localhost')
+    mongoSRV.database('network-monitor')
+    array = mongoSRV.retrive('test')
+    threads = []
+
+    for device in array:
+        thread = Device(ip=device['ip'], name=device['name'], interval=1000)
+        thread.bind(mongoSRV)
         thread.start()
-    time.sleep(2)
-    for thread in threads:
-        thread.stop()
+        threads.append(thread)
+#    time.sleep(2)
+#    for thread in threads:
+#        thread.stop()

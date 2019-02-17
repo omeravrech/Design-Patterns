@@ -10,7 +10,7 @@ def main():
     for obj in r:
         mongoSRV.write('test2', obj)
         time.sleep(1)
-#    print(mongoSecSRV.queue)
+    print(mongoSecSRV.queue)
 
 
 def removeUnicode(jsonObject):
@@ -43,6 +43,7 @@ class Singleton(type):
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            print('Create New instance of DB')
         return cls._instances[cls]
 
 
@@ -106,10 +107,10 @@ class MongoServer():
             print("Queue size = %d", len(self.queue))
             if (len(self.queue) > 0):
                 data = self.queue.pop(0)
-#                self.server[self.db][data.collection].InsertOne(data.data)
-                print(data)
-#            else:
-            time.sleep(2)
+                self.server[self.db][data.collection].insertOne(data.data)
+                print(data.collection)
+            else:
+                time.sleep(2)
 
     def __str__(self):
         output ='MongoServer:'

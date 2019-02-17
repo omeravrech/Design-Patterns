@@ -1,7 +1,6 @@
 import os, sys, socket, struct, select, time, datetime, getopt
 from threading import Thread
 
-
 # CONST
 ICMP_ECHO_REQUEST = 8 # Seems to be the same on Solaris.
 ALPHA = 0.15
@@ -92,9 +91,9 @@ def ping(dest_addr, timeout=2):
     """
     Returns either the delay (in seconds) or none on timeout.
     """
-    icmp = socket.getprotobyname("icmp")
+    #icmp = socket.getprotobyname("icmp")
     try:
-        my_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, icmp)
+        my_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP)
     except socket.error, (errno, msg):
         if errno == 1:
             # Operation not permitted
@@ -116,11 +115,11 @@ def ping(dest_addr, timeout=2):
     return delay
 
 class Device(Thread):
-    def __init__(self, datasource, ip, name, interval=30):
+    def __init__(self, ip, name, interval=30):
         Thread.__init__(self)
         self.ip = ip
         self.name = name
-        self.datasource = datasource
+        self.datastore = None
         self.status = False
         self.flag = False
         self.avg = 0
@@ -128,13 +127,17 @@ class Device(Thread):
 
     def stop(self):
         self.flag = True
-        print('Stop pinging {}[{}] Average: {}'.format(self.name, self.ip, self.avg))
 
+    def bind(self, datastore):
+        self.datastore = datastore
 
     def run(self):
         while (not self.flag):
             delay = ping(self.ip)
-            self.datasource.write({'collection': self.ip, 'data': { 'name': self.name, 'timestamp': time.time(), 'latency': delay }})
+            if (self.datastore != None):
+                self.datastore.write(self.ip, { 'name': self.name, 'timestamp': time.time(), 'latency': delay })
+            else:
+                print('Replay from {}: delay={}'.format(self.ip, delay))
             time.sleep(MONUS(self.interval, delay))
 
 if (__name__ == '__main__'):
